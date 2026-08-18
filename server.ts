@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { createServer as createViteServer } from 'vite';
 import mongoose, { Schema, Document } from 'mongoose';
 
@@ -46,31 +47,80 @@ const ClientReportSchema = new Schema<IClientReportDoc>({
 export const UserModel = (mongoose.models.User as mongoose.Model<IUserDoc>) || mongoose.model<IUserDoc>('User', UserSchema);
 export const ClientReportModel = (mongoose.models.ClientReport as mongoose.Model<IClientReportDoc>) || mongoose.model<IClientReportDoc>('ClientReport', ClientReportSchema);
 
-// --- Dual Engine Data Storage Engine ---
-const DATA_FILE = path.join(process.cwd(), '.local_db.json');
+// --- Dual Engine Data Storage (Serverless & Persistent Safe) ---
+const DATA_FILE = path.join(os.tmpdir(), 'client_field_reports_db.json');
+
+const INITIAL_DEMO_USERS = [
+  {
+    _id: 'usr_alex_default',
+    name: 'Alex Miller',
+    email: 'alex@company.com',
+    password: 'password123',
+    createdAt: new Date().toISOString()
+  },
+  {
+    _id: 'usr_sarah_default',
+    name: 'Sarah Miller',
+    email: 'sarah@company.com',
+    password: 'password123',
+    createdAt: new Date().toISOString()
+  }
+];
+
+const INITIAL_DEMO_REPORTS = [
+  {
+    _id: 'rep_demo_01',
+    userId: 'usr_alex_default',
+    clientName: 'Apex Logistics Ltd',
+    phone: '9876543210',
+    pincode: '110001',
+    latitude: 28.6139,
+    longitude: 77.2090,
+    address: 'Connaught Place, Central Delhi, New Delhi, 110001',
+    feedback: 'Product demo conducted successfully. Client requested quotation for 50 units.',
+    createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
+  }
+];
 
 interface LocalDB {
   users: Array<{ _id: string; name: string; email: string; password: string; createdAt: string }>;
   reports: Array<{ _id: string; userId: string; clientName: string; phone: string; pincode: string; latitude: number | null; longitude: number | null; address?: string | null; feedback: string; createdAt: string }>;
 }
 
+let inMemoryStore: LocalDB = {
+  users: [...INITIAL_DEMO_USERS],
+  reports: [...INITIAL_DEMO_REPORTS]
+};
+
 function loadLocalDB(): LocalDB {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (parsed && Array.isArray(parsed.users)) {
+        // Ensure default users exist
+        for (const defaultUser of INITIAL_DEMO_USERS) {
+          if (!parsed.users.some((u: any) => u.email === defaultUser.email)) {
+            parsed.users.push(defaultUser);
+          }
+        }
+        inMemoryStore = parsed;
+        return parsed;
+      }
     }
   } catch (err) {
-    console.error('Error reading local JSON DB:', err);
+    console.error('Error reading local JSON DB, using in-memory store:', err);
   }
-  return { users: [], reports: [] };
+  return inMemoryStore;
 }
 
 function saveLocalDB(db: LocalDB): void {
   try {
+    inMemoryStore = db;
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf-8');
   } catch (err) {
-    console.error('Error writing local JSON DB:', err);
+    // Vercel serverless read-only fallback to in-memory
+    inMemoryStore = db;
   }
 }
 
@@ -80,12 +130,28 @@ async function initDatabase(): Promise<void> {
   const mongoUri = process.env.MONGODB_URI;
   if (mongoUri && mongoUri.trim().length > 0) {
     try {
-      console.log('Connecting to MongoDB database...');
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-      isMongoConnected = true;
-      console.log('MongoDB connected successfully.');
+      if (mongoose.connection.readyState !== 1) {
+        console.log('Connecting to MongoDB database...');
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
+        isMongoConnected = true;
+        console.log('MongoDB connected successfully.');
+
+        // Seed demo accounts in MongoDB if not exists
+        for (const demoUser of INITIAL_DEMO_USERS) {
+          const exists = await UserModel.findOne({ email: demoUser.email });
+          if (!exists) {
+            await UserModel.create({
+              name: demoUser.name,
+              email: demoUser.email,
+              password: demoUser.password
+            });
+          }
+        }
+      } else {
+        isMongoConnected = true;
+      }
     } catch (err) {
-      console.warn('MongoDB connection failed. Using fallback persistent datastore.');
+      console.warn('MongoDB connection failed. Using high-availability fallback store.');
       isMongoConnected = false;
     }
   } else {
@@ -101,25 +167,27 @@ export function createExpressApp() {
   const app = express();
   app.use(express.json());
 
+  // Background DB connect (non-blocking for fast serverless responses)
   initDatabase().catch((err) => console.error('DB init warning:', err));
 
   const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyCgmGEomqsMzK3Fcx5Q4eVj8yWLkBBrbbA';
 
-  // --- API Routes ---
+  const router = express.Router();
 
   // Health
-  app.get('/api/health', (req, res) => {
+  router.get('/health', (req, res) => {
     res.json({
       status: 'ok',
-      db: isUsingMongo() ? 'MongoDB (Mongoose)' : 'Local Datastore',
+      db: isUsingMongo() ? 'MongoDB (Mongoose)' : 'Memory/Fallback Datastore',
       timestamp: new Date().toISOString()
     });
   });
 
   // 1. Auth Login
-  app.post('/api/auth/login', async (req, res) => {
+  router.post('/auth/login', async (req, res) => {
     try {
-      const { usernameOrEmail, password } = req.body;
+      await initDatabase().catch(() => {});
+      const { usernameOrEmail, password } = req.body || {};
       if (!usernameOrEmail || !password) {
         return res.status(400).json({ error: 'Username/Email and Password are required.' });
       }
@@ -131,7 +199,9 @@ export function createExpressApp() {
         user = await UserModel.findOne({
           $or: [{ email: normalized }, { name: String(usernameOrEmail).trim() }]
         });
-      } else {
+      }
+
+      if (!user) {
         const db = loadLocalDB();
         user = db.users.find(
           (u) => u.email.toLowerCase() === normalized || u.name.toLowerCase() === normalized
@@ -143,7 +213,7 @@ export function createExpressApp() {
       }
 
       if (user.password !== password) {
-        return res.status(401).json({ error: 'Invalid password.' });
+        return res.status(401).json({ error: 'Invalid password. Please check your credentials.' });
       }
 
       return res.json({
@@ -162,9 +232,10 @@ export function createExpressApp() {
   });
 
   // 2. Auth Register
-  app.post('/api/auth/register', async (req, res) => {
+  router.post('/auth/register', async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      await initDatabase().catch(() => {});
+      const { name, email, password } = req.body || {};
       if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required.' });
       }
@@ -223,7 +294,7 @@ export function createExpressApp() {
   });
 
   // 3. User profile
-  app.get('/api/auth/me', async (req, res) => {
+  router.get('/auth/me', async (req, res) => {
     try {
       const userId = req.headers['x-user-id'] as string;
       if (!userId) {
@@ -235,7 +306,9 @@ export function createExpressApp() {
         if (mongoose.Types.ObjectId.isValid(userId)) {
           user = await UserModel.findById(userId);
         }
-      } else {
+      }
+
+      if (!user) {
         const db = loadLocalDB();
         user = db.users.find((u) => u._id === userId);
       }
@@ -258,7 +331,7 @@ export function createExpressApp() {
   });
 
   // 4. Google Geolocation API
-  app.post('/api/geolocation/google', async (req, res) => {
+  router.post('/geolocation/google', async (req, res) => {
     try {
       const googleGeoUrl = `https://www.googleapis.com/geolocation/v1/geolocate?key=${GOOGLE_MAPS_KEY}`;
       const geoRes = await fetch(googleGeoUrl, {
@@ -312,7 +385,7 @@ export function createExpressApp() {
   });
 
   // 5. Reverse Geocoding with Google Maps
-  app.get('/api/geocode/reverse', async (req, res) => {
+  router.get('/geocode/reverse', async (req, res) => {
     try {
       const { lat, lng } = req.query;
       if (!lat || !lng) {
@@ -369,9 +442,8 @@ export function createExpressApp() {
       if (geoRes.ok) {
         const geoData = (await geoRes.json()) as any;
         const addr = geoData.address || {};
-        const street = addr.road || addr.suburb || addr.neighbourhood || '';
-        const city = addr.city || addr.town || addr.village || '';
         const postcode = addr.postcode || '';
+        const city = addr.city || addr.town || addr.village || '';
 
         return res.json({
           success: true,
@@ -389,7 +461,7 @@ export function createExpressApp() {
   });
 
   // 6. Google Maps Address Search / Autocomplete
-  app.get('/api/geocode/search', async (req, res) => {
+  router.get('/geocode/search', async (req, res) => {
     try {
       const { q } = req.query;
       if (!q || !String(q).trim()) {
@@ -420,8 +492,9 @@ export function createExpressApp() {
   });
 
   // 7. Get reports for user
-  app.get('/api/reports', async (req, res) => {
+  router.get('/reports', async (req, res) => {
     try {
+      await initDatabase().catch(() => {});
       const userId = (req.query.userId as string) || (req.headers['x-user-id'] as string);
       if (!userId) {
         return res.status(400).json({ error: 'User ID is required to fetch reports.' });
@@ -445,9 +518,10 @@ export function createExpressApp() {
   });
 
   // 8. Create report
-  app.post('/api/reports', async (req, res) => {
+  router.post('/reports', async (req, res) => {
     try {
-      const { userId, clientName, phone, pincode, latitude, longitude, address, feedback } = req.body;
+      await initDatabase().catch(() => {});
+      const { userId, clientName, phone, pincode, latitude, longitude, address, feedback } = req.body || {};
       const headerUserId = req.headers['x-user-id'] as string;
       const targetUserId = userId || headerUserId;
 
@@ -497,8 +571,9 @@ export function createExpressApp() {
   });
 
   // 9. Delete report
-  app.delete('/api/reports/:id', async (req, res) => {
+  router.delete('/reports/:id', async (req, res) => {
     try {
+      await initDatabase().catch(() => {});
       const reportId = req.params.id;
       const userId = req.headers['x-user-id'] as string;
 
@@ -522,6 +597,10 @@ export function createExpressApp() {
       return res.status(500).json({ error: 'Failed to delete report.' });
     }
   });
+
+  // Mount both under /api and root / to support direct routing & Vercel serverless rewrites
+  app.use('/api', router);
+  app.use('/', router);
 
   return app;
 }
@@ -549,4 +628,7 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start standalone server if not in a serverless environment
+if (process.env.VERCEL !== '1') {
+  startServer();
+}

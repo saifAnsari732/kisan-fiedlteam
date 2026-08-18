@@ -39,7 +39,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
           })
         });
 
-        const data = await res.json();
+        let data: any = {};
+        const text = await res.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            res.status === 500
+              ? 'Server database error. Please check your MONGODB_URI in Vercel settings.'
+              : `Server error (${res.status}): ${text.substring(0, 100)}`
+          );
+        }
+
         if (!res.ok) {
           throw new Error(data.error || 'Failed to create account.');
         }
@@ -58,7 +69,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
           })
         });
 
-        const data = await res.json();
+        let data: any = {};
+        const text = await res.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            res.status === 500
+              ? 'Server database error. Please check your MONGODB_URI in Vercel settings.'
+              : `Server error (${res.status}): ${text.substring(0, 100)}`
+          );
+        }
+
         if (!res.ok) {
           throw new Error(data.error || 'Invalid credentials.');
         }

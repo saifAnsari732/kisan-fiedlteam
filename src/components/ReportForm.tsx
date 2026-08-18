@@ -211,7 +211,18 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
         })
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(
+          res.status === 500
+            ? 'Database error while saving report. Check your database connection.'
+            : `Server returned status ${res.status}`
+        );
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Failed to submit client report.');
       }

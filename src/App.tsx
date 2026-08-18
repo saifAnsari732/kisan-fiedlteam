@@ -32,9 +32,14 @@ export default function App() {
           'x-user-id': userId
         }
       });
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.reports)) {
-        setReports(data.reports);
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (res.ok && Array.isArray(data.reports)) {
+          setReports(data.reports);
+        }
+      } catch {
+        console.warn('Non-JSON response from /api/reports');
       }
     } catch (err) {
       console.error('Failed to fetch user reports:', err);

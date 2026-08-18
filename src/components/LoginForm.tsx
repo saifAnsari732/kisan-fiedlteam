@@ -46,8 +46,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
         } catch {
           throw new Error(
             res.status === 500
-              ? 'Server database error. Please check your MONGODB_URI in Vercel settings.'
-              : `Server error (${res.status}): ${text.substring(0, 100)}`
+              ? 'Server database error. Please redeploy Vercel and check MongoDB Atlas Network Access.'
+              : `Server error (${res.status}): ${text.substring(0, 80)}`
           );
         }
 
@@ -76,8 +76,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
         } catch {
           throw new Error(
             res.status === 500
-              ? 'Server database error. Please check your MONGODB_URI in Vercel settings.'
-              : `Server error (${res.status}): ${text.substring(0, 100)}`
+              ? 'Server database error. Please redeploy Vercel and check MongoDB Atlas Network Access.'
+              : `Server error (${res.status}): ${text.substring(0, 80)}`
           );
         }
 

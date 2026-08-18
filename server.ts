@@ -47,7 +47,7 @@ const ClientReportSchema = new Schema<IClientReportDoc>({
 export const UserModel = (mongoose.models.User as mongoose.Model<IUserDoc>) || mongoose.model<IUserDoc>('User', UserSchema);
 export const ClientReportModel = (mongoose.models.ClientReport as mongoose.Model<IClientReportDoc>) || mongoose.model<IClientReportDoc>('ClientReport', ClientReportSchema);
 
-// --- Dual Engine Data Storage (Serverless & Persistent Safe) ---
+// --- Dual Engine Data Storage Engine ---
 const DATA_FILE = path.join(os.tmpdir(), 'client_field_reports_db.json');
 
 const INITIAL_DEMO_USERS = [
@@ -98,9 +98,8 @@ function loadLocalDB(): LocalDB {
       const data = fs.readFileSync(DATA_FILE, 'utf-8');
       const parsed = JSON.parse(data);
       if (parsed && Array.isArray(parsed.users)) {
-        // Ensure default users exist
         for (const defaultUser of INITIAL_DEMO_USERS) {
-          if (!parsed.users.some((u: any) => u.email === defaultUser.email)) {
+          if (!parsed.users.some((u: any) => u.email.toLowerCase() === defaultUser.email.toLowerCase())) {
             parsed.users.push(defaultUser);
           }
         }
@@ -109,7 +108,7 @@ function loadLocalDB(): LocalDB {
       }
     }
   } catch (err) {
-    console.error('Error reading local JSON DB, using in-memory store:', err);
+    // ignore
   }
   return inMemoryStore;
 }
@@ -119,66 +118,97 @@ function saveLocalDB(db: LocalDB): void {
     inMemoryStore = db;
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf-8');
   } catch (err) {
-    // Vercel serverless read-only fallback to in-memory
     inMemoryStore = db;
   }
 }
 
-let isMongoConnected = false;
-
-async function initDatabase(): Promise<void> {
-  const mongoUri = process.env.MONGODB_URI;
-  if (mongoUri && mongoUri.trim().length > 0) {
-    try {
-      if (mongoose.connection.readyState !== 1) {
-        console.log('Connecting to MongoDB database...');
-        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-        isMongoConnected = true;
-        console.log('MongoDB connected successfully.');
-
-        // Seed demo accounts in MongoDB if not exists
-        for (const demoUser of INITIAL_DEMO_USERS) {
-          const exists = await UserModel.findOne({ email: demoUser.email });
-          if (!exists) {
-            await UserModel.create({
-              name: demoUser.name,
-              email: demoUser.email,
-              password: demoUser.password
-            });
-          }
-        }
-      } else {
-        isMongoConnected = true;
-      }
-    } catch (err) {
-      console.warn('MongoDB connection failed. Using high-availability fallback store.');
-      isMongoConnected = false;
-    }
-  } else {
-    isMongoConnected = false;
-  }
+// Global cached Mongo connection for Vercel serverless functions
+interface GlobalMongo {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+  lastError: string | null;
 }
 
-function isUsingMongo(): boolean {
-  return isMongoConnected && mongoose.connection.readyState === 1;
+let cached: GlobalMongo = (global as any).mongooseCache || { conn: null, promise: null, lastError: null };
+(global as any).mongooseCache = cached;
+
+async function getDbConnection(): Promise<typeof mongoose | null> {
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri || !mongoUri.trim()) {
+    cached.lastError = 'MONGODB_URI is not set';
+    return null;
+  }
+
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 3000,
+      connectTimeoutMS: 3000,
+    };
+    cached.promise = mongoose.connect(mongoUri.trim(), opts).then((m) => {
+      console.log('MongoDB connected successfully');
+      cached.lastError = null;
+      // Background seed demo accounts in MongoDB
+      (async () => {
+        try {
+          for (const demoUser of INITIAL_DEMO_USERS) {
+            const exists = await UserModel.findOne({ email: demoUser.email });
+            if (!exists) {
+              await UserModel.create({
+                name: demoUser.name,
+                email: demoUser.email,
+                password: demoUser.password
+              });
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+      return m;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (err: any) {
+    console.warn('MongoDB connection warning:', err.message);
+    cached.lastError = err.message || 'Connection failed';
+    cached.promise = null;
+    cached.conn = null;
+    return null;
+  }
 }
 
 export function createExpressApp() {
   const app = express();
   app.use(express.json());
 
-  // Background DB connect (non-blocking for fast serverless responses)
-  initDatabase().catch((err) => console.error('DB init warning:', err));
+  // Non-blocking initial warm-up
+  getDbConnection().catch(() => {});
 
   const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyCgmGEomqsMzK3Fcx5Q4eVj8yWLkBBrbbA';
 
   const router = express.Router();
 
-  // Health
-  router.get('/health', (req, res) => {
+  // Health route
+  router.get('/health', async (req, res) => {
+    const dbConn = await getDbConnection();
+    const isMongo = !!(dbConn && mongoose.connection.readyState === 1);
     res.json({
       status: 'ok',
-      db: isUsingMongo() ? 'MongoDB (Mongoose)' : 'Memory/Fallback Datastore',
+      mongodb: {
+        connected: isMongo,
+        readyState: mongoose.connection.readyState,
+        uriConfigured: !!(process.env.MONGODB_URI && process.env.MONGODB_URI.trim().length > 0),
+        lastError: isMongo ? null : cached.lastError
+      },
+      fallbackStore: 'Active (Fast in-memory / local buffer)',
       timestamp: new Date().toISOString()
     });
   });
@@ -186,7 +216,6 @@ export function createExpressApp() {
   // 1. Auth Login
   router.post('/auth/login', async (req, res) => {
     try {
-      await initDatabase().catch(() => {});
       const { usernameOrEmail, password } = req.body || {};
       if (!usernameOrEmail || !password) {
         return res.status(400).json({ error: 'Username/Email and Password are required.' });
@@ -195,10 +224,15 @@ export function createExpressApp() {
       const normalized = String(usernameOrEmail).toLowerCase().trim();
       let user: any = null;
 
-      if (isUsingMongo()) {
-        user = await UserModel.findOne({
-          $or: [{ email: normalized }, { name: String(usernameOrEmail).trim() }]
-        });
+      const dbConn = await getDbConnection();
+      if (dbConn && mongoose.connection.readyState === 1) {
+        try {
+          user = await UserModel.findOne({
+            $or: [{ email: normalized }, { name: String(usernameOrEmail).trim() }]
+          });
+        } catch (mErr) {
+          console.warn('Mongoose query failed, using fallback:', mErr);
+        }
       }
 
       if (!user) {
@@ -209,11 +243,11 @@ export function createExpressApp() {
       }
 
       if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials. User not found.' });
+        return res.status(401).json({ error: 'Invalid credentials. User not found. Please click "Create one" to register.' });
       }
 
       if (user.password !== password) {
-        return res.status(401).json({ error: 'Invalid password. Please check your credentials.' });
+        return res.status(401).json({ error: 'Invalid password. Please verify your credentials.' });
       }
 
       return res.json({
@@ -227,14 +261,13 @@ export function createExpressApp() {
       });
     } catch (err: any) {
       console.error('Login error:', err);
-      return res.status(500).json({ error: 'Server error occurred during login.' });
+      return res.status(500).json({ error: err.message || 'Server error occurred during login.' });
     }
   });
 
   // 2. Auth Register
   router.post('/auth/register', async (req, res) => {
     try {
-      await initDatabase().catch(() => {});
       const { name, email, password } = req.body || {};
       if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required.' });
@@ -243,53 +276,59 @@ export function createExpressApp() {
       const normalizedEmail = String(email).toLowerCase().trim();
       const trimmedName = String(name).trim();
 
-      if (isUsingMongo()) {
-        const existing = await UserModel.findOne({ email: normalizedEmail });
-        if (existing) {
-          return res.status(400).json({ error: 'A user with this email already exists.' });
-        }
-        const newUser = await UserModel.create({
-          name: trimmedName,
-          email: normalizedEmail,
-          password
-        });
-        return res.status(201).json({
-          success: true,
-          user: {
-            id: newUser._id.toString(),
-            _id: newUser._id.toString(),
-            name: newUser.name,
-            email: newUser.email
+      const dbConn = await getDbConnection();
+      if (dbConn && mongoose.connection.readyState === 1) {
+        try {
+          const existing = await UserModel.findOne({ email: normalizedEmail });
+          if (existing) {
+            return res.status(400).json({ error: 'An account with this email already exists. Please sign in.' });
           }
-        });
-      } else {
-        const db = loadLocalDB();
-        const existing = db.users.find((u) => u.email.toLowerCase() === normalizedEmail);
-        if (existing) {
-          return res.status(400).json({ error: 'A user with this email already exists.' });
+          const newUser = await UserModel.create({
+            name: trimmedName,
+            email: normalizedEmail,
+            password
+          });
+          return res.status(201).json({
+            success: true,
+            user: {
+              id: newUser._id.toString(),
+              _id: newUser._id.toString(),
+              name: newUser.name,
+              email: newUser.email
+            }
+          });
+        } catch (mongoErr: any) {
+          console.warn('MongoDB insert failed, saving to fallback:', mongoErr);
         }
-        const newUser = {
-          _id: 'usr_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
-          name: trimmedName,
-          email: normalizedEmail,
-          password,
-          createdAt: new Date().toISOString()
-        };
-        db.users.push(newUser);
-        saveLocalDB(db);
-        return res.status(201).json({
-          success: true,
-          user: {
-            id: newUser._id,
-            _id: newUser._id,
-            name: newUser.name,
-            email: newUser.email
-          }
-        });
       }
+
+      // Fallback local memory store
+      const db = loadLocalDB();
+      const existing = db.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+      if (existing) {
+        return res.status(400).json({ error: 'An account with this email already exists. Please sign in.' });
+      }
+      const newUser = {
+        _id: 'usr_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        name: trimmedName,
+        email: normalizedEmail,
+        password,
+        createdAt: new Date().toISOString()
+      };
+      db.users.push(newUser);
+      saveLocalDB(db);
+      return res.status(201).json({
+        success: true,
+        user: {
+          id: newUser._id,
+          _id: newUser._id,
+          name: newUser.name,
+          email: newUser.email
+        }
+      });
     } catch (err: any) {
       console.error('Registration error:', err);
-      return res.status(500).json({ error: 'Failed to create user account.' });
+      return res.status(500).json({ error: err.message || 'Failed to create user account.' });
     }
   });
 
@@ -302,7 +341,8 @@ export function createExpressApp() {
       }
 
       let user: any = null;
-      if (isUsingMongo()) {
+      const dbConn = await getDbConnection();
+      if (dbConn && mongoose.connection.readyState === 1) {
         if (mongoose.Types.ObjectId.isValid(userId)) {
           user = await UserModel.findById(userId);
         }
@@ -494,16 +534,22 @@ export function createExpressApp() {
   // 7. Get reports for user
   router.get('/reports', async (req, res) => {
     try {
-      await initDatabase().catch(() => {});
       const userId = (req.query.userId as string) || (req.headers['x-user-id'] as string);
       if (!userId) {
         return res.status(400).json({ error: 'User ID is required to fetch reports.' });
       }
 
       let reports: any[] = [];
-      if (isUsingMongo()) {
-        reports = await ClientReportModel.find({ userId }).sort({ createdAt: -1 }).lean();
-      } else {
+      const dbConn = await getDbConnection();
+      if (dbConn && mongoose.connection.readyState === 1) {
+        try {
+          reports = await ClientReportModel.find({ userId }).sort({ createdAt: -1 }).lean();
+        } catch (e) {
+          console.warn('Mongo fetch reports failed, using memory store:', e);
+        }
+      }
+
+      if (!reports || reports.length === 0) {
         const db = loadLocalDB();
         reports = db.reports
           .filter((r) => r.userId === userId)
@@ -513,14 +559,13 @@ export function createExpressApp() {
       return res.json({ reports });
     } catch (err: any) {
       console.error('Fetch reports error:', err);
-      return res.status(500).json({ error: 'Failed to retrieve reports from database.' });
+      return res.status(500).json({ error: 'Failed to retrieve reports.' });
     }
   });
 
   // 8. Create report
   router.post('/reports', async (req, res) => {
     try {
-      await initDatabase().catch(() => {});
       const { userId, clientName, phone, pincode, latitude, longitude, address, feedback } = req.body || {};
       const headerUserId = req.headers['x-user-id'] as string;
       const targetUserId = userId || headerUserId;
@@ -533,18 +578,25 @@ export function createExpressApp() {
       }
 
       let savedReport: any = null;
-      if (isUsingMongo()) {
-        savedReport = await ClientReportModel.create({
-          userId: targetUserId,
-          clientName: String(clientName).trim(),
-          phone: String(phone).trim(),
-          pincode: String(pincode).trim(),
-          latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
-          longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
-          address: address ? String(address).trim() : null,
-          feedback: String(feedback).trim()
-        });
-      } else {
+      const dbConn = await getDbConnection();
+      if (dbConn && mongoose.connection.readyState === 1) {
+        try {
+          savedReport = await ClientReportModel.create({
+            userId: targetUserId,
+            clientName: String(clientName).trim(),
+            phone: String(phone).trim(),
+            pincode: String(pincode).trim(),
+            latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
+            longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
+            address: address ? String(address).trim() : null,
+            feedback: String(feedback).trim()
+          });
+        } catch (e) {
+          console.warn('Mongo save report failed, using fallback:', e);
+        }
+      }
+
+      if (!savedReport) {
         const db = loadLocalDB();
         const newRep = {
           _id: 'rep_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
@@ -573,7 +625,6 @@ export function createExpressApp() {
   // 9. Delete report
   router.delete('/reports/:id', async (req, res) => {
     try {
-      await initDatabase().catch(() => {});
       const reportId = req.params.id;
       const userId = req.headers['x-user-id'] as string;
 
@@ -581,15 +632,22 @@ export function createExpressApp() {
         return res.status(401).json({ error: 'Unauthorized.' });
       }
 
-      if (isUsingMongo()) {
-        const deleted = await ClientReportModel.findOneAndDelete({ _id: reportId, userId });
-        if (!deleted) return res.status(404).json({ error: 'Report not found.' });
-      } else {
-        const db = loadLocalDB();
-        const idx = db.reports.findIndex((r) => r._id === reportId && r.userId === userId);
-        if (idx === -1) return res.status(404).json({ error: 'Report not found.' });
+      const dbConn = await getDbConnection();
+      if (dbConn && mongoose.connection.readyState === 1) {
+        try {
+          const deleted = await ClientReportModel.findOneAndDelete({ _id: reportId, userId });
+          if (deleted) return res.json({ success: true, message: 'Report deleted.' });
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const db = loadLocalDB();
+      const idx = db.reports.findIndex((r) => r._id === reportId && r.userId === userId);
+      if (idx !== -1) {
         db.reports.splice(idx, 1);
         saveLocalDB(db);
+        return res.json({ success: true, message: 'Report deleted.' });
       }
 
       return res.json({ success: true, message: 'Report deleted.' });
@@ -598,7 +656,7 @@ export function createExpressApp() {
     }
   });
 
-  // Mount both under /api and root / to support direct routing & Vercel serverless rewrites
+  // Mount both under /api and root /
   app.use('/api', router);
   app.use('/', router);
 
@@ -628,7 +686,6 @@ async function startServer() {
   });
 }
 
-// Only start standalone server if not in a serverless environment
 if (process.env.VERCEL !== '1') {
   startServer();
 }

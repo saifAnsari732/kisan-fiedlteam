@@ -123,9 +123,9 @@ export default function App() {
   const reportsWithGpsCount = reports.filter((r) => r.latitude !== null && r.longitude !== null).length;
 
   return (
-    <div className="min-h-screen bg-slate-200/90 flex flex-col items-center justify-center sm:p-4 selection:bg-indigo-600 selection:text-white font-sans">
+    <div className="h-[100dvh] w-full bg-slate-200/80 flex flex-col items-center justify-center selection:bg-blue-600 selection:text-white font-sans overflow-hidden">
       {/* Phone Frame Container */}
-      <div className="w-full max-w-md min-h-screen sm:min-h-0 sm:h-[860px] sm:max-h-[92vh] bg-[#F1F5F9] sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-300 flex flex-col overflow-hidden relative">
+      <div className="w-full h-full sm:h-[100dvh] sm:max-w-md bg-[#F1F5F9] sm:border-x sm:border-slate-300 sm:shadow-2xl flex flex-col relative">
         
         {/* Phone Top Header */}
         <Navbar user={currentUser} onLogout={handleLogout} />
@@ -144,7 +144,7 @@ export default function App() {
             /* Login View */
             <div className="py-2 space-y-4">
               <div className="text-center px-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 uppercase tracking-wide mb-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wide mb-2">
                   <Sparkles className="w-3 h-3" /> Field Rep Portal
                 </span>
                 <h2 className="text-xl font-bold text-slate-800 tracking-tight">
@@ -174,7 +174,7 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <div className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md text-center">
                     <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase">
-                      <FileText className="w-2.5 h-2.5 text-indigo-600" />
+                      <FileText className="w-2.5 h-2.5 text-blue-600" />
                       <span>Reports</span>
                     </div>
                     <span className="text-xs font-bold text-slate-800">{totalReportsCount}</span>
@@ -197,7 +197,7 @@ export default function App() {
                   onClick={() => setActiveTab('create')}
                   className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     activeTab === 'create'
-                      ? 'bg-white text-indigo-600 shadow-xs'
+                      ? 'bg-white text-blue-600 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -210,7 +210,7 @@ export default function App() {
                   onClick={() => setActiveTab('list')}
                   className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     activeTab === 'list'
-                      ? 'bg-white text-indigo-600 shadow-xs'
+                      ? 'bg-white text-blue-600 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -239,7 +239,7 @@ export default function App() {
             <button
               onClick={() => setActiveTab('create')}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors cursor-pointer ${
-                activeTab === 'create' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                activeTab === 'create' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               <PlusCircle className="w-4 h-4" />
@@ -249,13 +249,13 @@ export default function App() {
             <button
               onClick={() => setActiveTab('list')}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors cursor-pointer ${
-                activeTab === 'list' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                activeTab === 'list' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               <div className="relative">
                 <FileText className="w-4 h-4" />
                 {totalReportsCount > 0 && (
-                  <span className="absolute -top-1 -right-2 w-3.5 h-3.5 bg-indigo-600 text-white rounded-full text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-2 w-3.5 h-3.5 bg-rose-600 text-white rounded-full text-[9px] flex items-center justify-center font-bold">
                     {totalReportsCount}
                   </span>
                 )}

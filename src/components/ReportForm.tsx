@@ -255,7 +255,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
           <h2 className="text-base font-bold text-slate-800 tracking-tight">New Client Report</h2>
           <p className="text-[11px] text-slate-400">Record field visit feedback & Google GPS location</p>
         </div>
-        <div className="w-7 h-7 bg-indigo-50 text-indigo-600 rounded-md flex items-center justify-center">
+        <div className="w-7 h-7 bg-blue-50 text-blue-600 rounded-md flex items-center justify-center">
           <Send className="w-3.5 h-3.5" />
         </div>
       </div>
@@ -278,7 +278,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
         {/* Client Name */}
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="client-name">
-            Client Name <span className="text-indigo-600">*</span>
+            Client Name <span className="text-blue-600">*</span>
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -291,7 +291,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               placeholder="e.g. Apex Enterprises"
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all"
+              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all"
             />
           </div>
         </div>
@@ -300,7 +300,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
         <div className="grid grid-cols-2 gap-2.5">
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="client-phone">
-              Phone <span className="text-indigo-600">*</span>
+              Phone <span className="text-blue-600">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -312,15 +312,15 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 9876543210"
-                className="w-full pl-8 pr-2.5 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all"
+                placeholder="+1 555-0192"
+                className="w-full pl-8 pr-2.5 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="client-pincode">
-              Pincode <span className="text-indigo-600">*</span>
+              Pincode <span className="text-blue-600">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -332,8 +332,8 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                 required
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value)}
-                placeholder="226012"
-                className="w-full pl-8 pr-2.5 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all"
+                placeholder="94105"
+                className="w-full pl-8 pr-2.5 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all"
               />
             </div>
           </div>
@@ -404,14 +404,14 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
             disabled={locLoading}
             className={`w-full min-h-[44px] px-3 py-2 border-2 border-dashed rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               latitude !== null
-                ? 'bg-green-50/80 border-green-400 text-green-800 hover:bg-green-100/70'
-                : 'border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/40 active:bg-indigo-50/70'
+                ? 'bg-green-50/70 border-green-300 text-green-800 hover:bg-green-100/60'
+                : 'border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 active:bg-blue-50/60'
             }`}
           >
             {locLoading ? (
               <>
-                <RotateCw className="w-4 h-4 animate-spin text-indigo-600" />
-                <span>Fetching Real Location via Google Maps...</span>
+                <RotateCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                <span>Acquiring GPS Position...</span>
               </>
             ) : latitude !== null ? (
               <>
@@ -420,8 +420,8 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
               </>
             ) : (
               <>
-                <Compass className="w-4 h-4 text-indigo-600" />
-                <span>Get Current Location (Google Maps)</span>
+                <Compass className="w-3.5 h-3.5 text-blue-600" />
+                <span>Get Current Location</span>
               </>
             )}
           </button>
@@ -480,6 +480,15 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                   </div>
                 </div>
               </div>
+              <a
+                href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-0.5"
+              >
+                <span>Maps</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
             </div>
           )}
 
@@ -494,7 +503,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
         {/* Client Feedback / Response */}
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" htmlFor="client-feedback">
-            Feedback / Response <span className="text-indigo-600">*</span>
+            Feedback / Response <span className="text-blue-600">*</span>
           </label>
           <div className="relative">
             <div className="absolute top-2.5 left-2.5 flex items-start pointer-events-none text-slate-400">
@@ -507,7 +516,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder="Enter meeting notes, product interest, client feedback..."
-              className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all resize-none"
+              className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-slate-800 placeholder:text-slate-400 bg-white transition-all resize-none"
             />
           </div>
         </div>
@@ -517,7 +526,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
           id="submit-report-btn"
           type="submit"
           disabled={submitting}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-2.5 px-4 rounded-md font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer min-h-[44px]"
+          className="w-full bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white py-2.5 px-4 rounded-md font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer min-h-[44px]"
         >
           {submitting ? (
             <>

@@ -66,7 +66,7 @@ export const ReportList: React.FC<ReportListProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-slate-800">Your Reports</h3>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
               {reports.length}
             </span>
           </div>
@@ -85,7 +85,7 @@ export const ReportList: React.FC<ReportListProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by client, phone, pin or notes..."
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder:text-slate-400"
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -94,7 +94,7 @@ export const ReportList: React.FC<ReportListProps> = ({
       <div className="p-4 space-y-3">
         {loading ? (
           <div className="py-8 text-center">
-            <div className="w-6 h-6 mx-auto border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-2"></div>
+            <div className="w-6 h-6 mx-auto border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-2"></div>
             <p className="text-xs text-slate-400 font-medium">Syncing database reports...</p>
           </div>
         ) : filteredReports.length === 0 ? (
@@ -131,7 +131,7 @@ export const ReportList: React.FC<ReportListProps> = ({
                 {/* Top: Client Name & Date & Delete */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2">
-                    <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-7 h-7 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Building className="w-3.5 h-3.5" />
                     </div>
                     <div>
@@ -158,7 +158,7 @@ export const ReportList: React.FC<ReportListProps> = ({
                 <div className="flex flex-wrap gap-1.5 text-xs">
                   <a
                     href={`tel:${report.phone}`}
-                    className="inline-flex items-center px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 rounded text-slate-700 hover:text-indigo-700 font-medium text-[11px] transition-colors"
+                    className="inline-flex items-center px-2 py-0.5 bg-slate-100 hover:bg-blue-50 rounded text-slate-700 hover:text-blue-700 font-medium text-[11px] transition-colors"
                   >
                     <Phone className="w-2.5 h-2.5 mr-1 text-slate-400" />
                     <span>{report.phone}</span>
@@ -207,7 +207,7 @@ export const ReportList: React.FC<ReportListProps> = ({
                     disabled={!hasCoordinates}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
                       hasCoordinates
-                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 active:bg-indigo-200'
+                        ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 active:bg-blue-200'
                         : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
                     }`}
                   >
@@ -227,8 +227,9 @@ export const ReportList: React.FC<ReportListProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
           <span>Synced with Database</span>
         </span>
-        <span className="text-slate-400 font-semibold">
-          {filteredReports.length} {filteredReports.length === 1 ? 'record' : 'records'}
+        <span>•</span>
+        <span className="flex items-center gap-1 text-blue-600">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> MongoDB Portal
         </span>
       </div>
     </div>

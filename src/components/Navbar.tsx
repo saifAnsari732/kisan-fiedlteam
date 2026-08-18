@@ -1,19 +1,18 @@
 import React from 'react';
 import { User } from '../types';
-import { LogOut, Database } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 interface NavbarProps {
   user: User | null;
   onLogout: () => void;
-  dbStatus?: string;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ user, onLogout, dbStatus }) => {
+export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
   return (
-    <header className="h-14 bg-white border-b border-slate-200 px-3.5 flex items-center justify-between flex-none sticky top-0 z-30">
+    <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between flex-none sticky top-0 z-30 shadow-2xs">
       {/* Brand Logo with Geometric Accent */}
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center shadow-xs">
+        <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center shadow-xs">
           <div className="w-3.5 h-3.5 bg-white rounded-xs"></div>
         </div>
         <div className="flex flex-col">
@@ -28,33 +27,25 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout, dbStatus }) => {
 
       {/* User Status & Logout */}
       <div className="flex items-center gap-2">
-        {dbStatus && (
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-slate-50 text-slate-600 rounded-full border border-slate-200 text-[10px] font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span className="font-semibold text-slate-700">{dbStatus}</span>
-          </div>
-        )}
-
         {user ? (
-          <div className="flex items-center gap-2">
-            <button
-              id="logout-btn"
-              onClick={onLogout}
-              className="bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 p-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
-              title="Logout"
-            >
-              <LogOut className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-[11px]">Logout</span>
-            </button>
-          </div>
+          <button
+            id="logout-btn"
+            onClick={onLogout}
+            className="bg-slate-100 hover:bg-red-50 hover:text-red-700 active:bg-red-100 text-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-200 hover:border-red-200"
+            title="Logout"
+          >
+            <LogOut className="w-3.5 h-3.5 text-slate-500 hover:text-red-600" />
+            <span className="text-[11px]">Logout</span>
+          </button>
         ) : (
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Internal Portal
+            Field Portal
           </span>
         )}
       </div>
     </header>
   );
 };
+
 
 

@@ -17,6 +17,7 @@ export interface IClientReportDoc extends Document {
   pincode: string;
   latitude: number | null;
   longitude: number | null;
+  address: string | null;
   feedback: string;
   createdAt: Date;
 }
@@ -35,6 +36,7 @@ const ClientReportSchema = new Schema<IClientReportDoc>({
   pincode: { type: String, required: true, trim: true },
   latitude: { type: Number, default: null },
   longitude: { type: Number, default: null },
+  address: { type: String, default: null, trim: true },
   feedback: { type: String, required: true, trim: true },
   createdAt: { type: Date, default: Date.now }
 });
@@ -49,7 +51,7 @@ const DATA_FILE = path.join(process.cwd(), '.local_db.json');
 
 interface LocalDB {
   users: Array<{ _id: string; name: string; email: string; password: string; createdAt: string }>;
-  reports: Array<{ _id: string; userId: string; clientName: string; phone: string; pincode: string; latitude: number | null; longitude: number | null; feedback: string; createdAt: string }>;
+  reports: Array<{ _id: string; userId: string; clientName: string; phone: string; pincode: string; latitude: number | null; longitude: number | null; address?: string | null; feedback: string; createdAt: string }>;
 }
 
 function loadLocalDB(): LocalDB {
@@ -89,6 +91,7 @@ function loadLocalDB(): LocalDB {
         pincode: '94105',
         latitude: 37.7749,
         longitude: -122.4194,
+        address: '500 Howard St, Financial District, San Francisco, CA 94105, USA',
         feedback: 'Client confirmed renewal for Q3. Discussed expanded coverage for warehouse hub.',
         createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
       },
@@ -100,6 +103,7 @@ function loadLocalDB(): LocalDB {
         pincode: '94016',
         latitude: 37.7083,
         longitude: -122.4644,
+        address: '888 Geneva Ave, Daly City, CA 94016, USA',
         feedback: 'In-person store audit complete. Requesting upgraded barcode scanner terminals.',
         createdAt: new Date(Date.now() - 86400000 * 1).toISOString()
       },
@@ -111,6 +115,7 @@ function loadLocalDB(): LocalDB {
         pincode: '94110',
         latitude: 37.7599,
         longitude: -122.4148,
+        address: '2500 Mission St, Mission District, San Francisco, CA 94110, USA',
         feedback: 'Met with facility supervisor. Feedback on delivery turnaround was very positive.',
         createdAt: new Date().toISOString()
       }
@@ -221,6 +226,7 @@ export async function createReport(data: {
   pincode: string;
   latitude: number | null;
   longitude: number | null;
+  address?: string | null;
   feedback: string;
 }) {
   if (isUsingMongo()) {
@@ -231,6 +237,7 @@ export async function createReport(data: {
       pincode: data.pincode.trim(),
       latitude: data.latitude,
       longitude: data.longitude,
+      address: data.address ? data.address.trim() : null,
       feedback: data.feedback.trim()
     });
     const saved = await report.save();
@@ -245,6 +252,7 @@ export async function createReport(data: {
       pincode: data.pincode.trim(),
       latitude: data.latitude,
       longitude: data.longitude,
+      address: data.address ? data.address.trim() : null,
       feedback: data.feedback.trim(),
       createdAt: new Date().toISOString()
     };

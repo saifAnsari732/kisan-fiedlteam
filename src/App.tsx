@@ -20,23 +20,8 @@ export default function App() {
 
   const [reports, setReports] = useState<ClientReport[]>([]);
   const [loadingReports, setLoadingReports] = useState<boolean>(false);
-  const [dbStatus, setDbStatus] = useState<string>('MongoDB');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
-
-  // Check backend DB status
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.db) {
-          setDbStatus(data.db);
-        }
-      })
-      .catch(() => {
-        // quiet fallback
-      });
-  }, []);
 
   // Fetch reports for current user
   const fetchUserReports = useCallback(async (userId: string) => {
@@ -94,7 +79,7 @@ export default function App() {
   const handleReportCreated = (newReport: ClientReport) => {
     setReports((prev) => [newReport, ...prev]);
     showToast('Report submitted and saved.');
-    // Smoothly auto switch to list or stay
+    // Smoothly auto switch to list
     setActiveTab('list');
   };
 
@@ -133,23 +118,23 @@ export default function App() {
   const reportsWithGpsCount = reports.filter((r) => r.latitude !== null && r.longitude !== null).length;
 
   return (
-    <div className="min-h-screen bg-slate-200/80 flex flex-col items-center justify-start sm:py-6 selection:bg-indigo-600 selection:text-white font-sans">
-      {/* Phone Mockup Frame Container */}
-      <div className="w-full max-w-md min-h-screen sm:min-h-[820px] sm:max-h-[900px] bg-[#F1F5F9] sm:rounded-2xl sm:shadow-2xl sm:border sm:border-slate-300 flex flex-col overflow-hidden relative">
+    <div className="min-h-screen bg-slate-200/90 flex flex-col items-center justify-center sm:p-4 selection:bg-indigo-600 selection:text-white font-sans">
+      {/* Phone Frame Container */}
+      <div className="w-full max-w-md min-h-screen sm:min-h-0 sm:h-[860px] sm:max-h-[92vh] bg-[#F1F5F9] sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-300 flex flex-col overflow-hidden relative">
         
         {/* Phone Top Header */}
-        <Navbar user={currentUser} onLogout={handleLogout} dbStatus={dbStatus} />
+        <Navbar user={currentUser} onLogout={handleLogout} />
 
         {/* Floating Toast inside Phone View */}
         {toastMessage && (
-          <div className="absolute top-18 left-4 right-4 z-50 bg-slate-900 text-white px-3.5 py-2.5 rounded-lg shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-medium animate-in slide-in-from-top-2 duration-200">
+          <div className="absolute top-16 left-4 right-4 z-50 bg-slate-900 text-white px-3.5 py-2.5 rounded-lg shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-medium animate-in slide-in-from-top-2 duration-200">
             <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
             <span className="truncate">{toastMessage}</span>
           </div>
         )}
 
         {/* Phone Content Scrollable Body */}
-        <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-20 sm:pb-6">
+        <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-20 sm:pb-20">
           {!currentUser ? (
             /* Login View */
             <div className="py-2 space-y-4">
@@ -245,7 +230,7 @@ export default function App() {
 
         {/* Mobile Sticky Bottom App Bar when Logged In */}
         {currentUser && (
-          <nav className="absolute bottom-0 left-0 right-0 h-14 bg-white border-t border-slate-200 px-4 flex items-center justify-around z-20">
+          <nav className="absolute bottom-0 left-0 right-0 h-14 bg-white border-t border-slate-200 px-4 flex items-center justify-around z-20 shadow-lg">
             <button
               onClick={() => setActiveTab('create')}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors cursor-pointer ${

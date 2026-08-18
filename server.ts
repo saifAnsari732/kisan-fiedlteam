@@ -119,6 +119,209 @@ async function startServer() {
     }
   });
 
+  // Google Maps API Key
+  const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyCgmGEomqsMzK3Fcx5Q4eVj8yWLkBBrbbA';
+
+  // 1. Google Geolocation API (Gets high-accuracy current location via Google)
+  app.post('/api/geolocation/google', async (req, res) => {
+    try {
+      const googleGeoUrl = `https://www.googleapis.com/geolocation/v1/geolocate?key=${GOOGLE_MAPS_KEY}`;
+      const geoRes = await fetch(googleGeoUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ considerIp: true })
+      });
+
+      if (geoRes.ok) {
+        const geoData = (await geoRes.json()) as any;
+        if (geoData.location) {
+          const lat = geoData.location.lat;
+          const lng = geoData.location.lng;
+          const accuracy = geoData.accuracy || 50;
+
+          // Also reverse-geocode to get readable address
+          const reverseUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_KEY}&language=en`;
+          const revRes = await fetch(reverseUrl);
+          let formattedAddress = `${lat}, ${lng}`;
+          let postcode = null;
+          let city = null;
+
+          if (revRes.ok) {
+            const revData = (await revRes.json()) as any;
+            if (revData.results && revData.results.length > 0) {
+              formattedAddress = revData.results[0].formatted_address;
+              const comps = revData.results[0].address_components || [];
+              for (const c of comps) {
+                if (c.types.includes('postal_code')) postcode = c.long_name;
+                if (c.types.includes('locality')) city = c.long_name;
+              }
+            }
+          }
+
+          return res.json({
+            success: true,
+            latitude: lat,
+            longitude: lng,
+            accuracy,
+            address: formattedAddress,
+            postcode,
+            city,
+            source: 'Google Geolocation API'
+          });
+        }
+      }
+      return res.status(500).json({ error: 'Could not resolve location via Google Geolocation.' });
+    } catch (err: any) {
+      console.error('Google Geolocation API error:', err);
+      return res.status(500).json({ error: 'Failed to fetch location from Google Geolocation API.' });
+    }
+  });
+
+  // 2. Google Maps Reverse Geocoding Proxy (converts Lat/Lng to real, high-accuracy address)
+  app.get('/api/geocode/reverse', async (req, res) => {
+    try {
+      const { lat, lng } = req.query;
+      if (!lat || !lng) {
+        return res.status(400).json({ error: 'Latitude (lat) and Longitude (lng) are required.' });
+      }
+
+      const numLat = parseFloat(lat as string);
+      const numLng = parseFloat(lng as string);
+
+      if (isNaN(numLat) || isNaN(numLng)) {
+        return res.status(400).json({ error: 'Invalid latitude or longitude numbers.' });
+      }
+
+      // Priority 1: Google Maps Geocoding API
+      try {
+        const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(numLat)},${encodeURIComponent(numLng)}&key=${GOOGLE_MAPS_KEY}&language=en`;
+        const googleRes = await fetch(googleUrl);
+        if (googleRes.ok) {
+          const googleData = (await googleRes.json()) as any;
+          if (googleData.status === 'OK' && googleData.results && googleData.results.length > 0) {
+            const bestResult = googleData.results[0];
+            const comps = bestResult.address_components || [];
+            
+            let postcode = null;
+            let city = null;
+            let state = null;
+            let country = null;
+            let sublocality = null;
+            let route = null;
+
+            for (const c of comps) {
+              if (c.types.includes('postal_code')) postcode = c.long_name;
+              if (c.types.includes('locality')) city = c.long_name;
+              if (c.types.includes('administrative_area_level_1')) state = c.long_name;
+              if (c.types.includes('country')) country = c.long_name;
+              if (c.types.includes('sublocality') || c.types.includes('sublocality_level_1')) sublocality = c.long_name;
+              if (c.types.includes('route')) route = c.long_name;
+            }
+
+            return res.json({
+              success: true,
+              address: bestResult.formatted_address,
+              fullDisplayName: bestResult.formatted_address,
+              postcode: postcode || null,
+              city: city || sublocality || null,
+              state: state || null,
+              country: country || null,
+              source: 'Google Maps Geocoding API',
+              results: googleData.results.slice(0, 3)
+            });
+          }
+        }
+      } catch (gErr) {
+        console.warn('Google Maps geocoding call failed, falling back to OSM:', gErr);
+      }
+
+      // Fallback: OpenStreetMap Nominatim
+      const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(numLat)}&lon=${encodeURIComponent(numLng)}&addressdetails=1`;
+      const geoRes = await fetch(nominatimUrl, {
+        headers: {
+          'User-Agent': 'FieldOpsClientReportApp/1.0 (internal-field-ops)',
+          'Accept-Language': 'en,hi'
+        }
+      });
+
+      if (geoRes.ok) {
+        const geoData = (await geoRes.json()) as any;
+        const addr = geoData.address || {};
+        const street = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || '';
+        const area = addr.suburb || addr.neighbourhood || addr.city_district || '';
+        const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+        const state = addr.state || addr.region || '';
+        const postcode = addr.postcode || '';
+        const country = addr.country || '';
+
+        const parts = [street, area, city, state, postcode, country].filter((p, idx, self) => Boolean(p) && self.indexOf(p) === idx);
+        const cleanAddress = parts.length > 0 ? parts.join(', ') : geoData.display_name || `${numLat}, ${numLng}`;
+
+        return res.json({
+          success: true,
+          address: cleanAddress,
+          fullDisplayName: geoData.display_name || cleanAddress,
+          postcode: postcode || null,
+          city: city || null,
+          state: state || null,
+          country: country || null,
+          source: 'OpenStreetMap Nominatim',
+          details: addr
+        });
+      }
+
+      return res.status(500).json({ error: 'Failed to resolve address from coordinates.' });
+    } catch (err: any) {
+      console.error('Reverse geocode error:', err);
+      return res.status(500).json({ error: 'Failed to retrieve address from coordinates.' });
+    }
+  });
+
+  // 3. Google Maps Address Search / Autocomplete (Search landmark or address)
+  app.get('/api/geocode/search', async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || !String(q).trim()) {
+        return res.status(400).json({ error: 'Search query is required.' });
+      }
+
+      const googleSearchUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(String(q).trim())}&key=${GOOGLE_MAPS_KEY}&language=en`;
+      const gRes = await fetch(googleSearchUrl);
+      
+      if (gRes.ok) {
+        const data = (await gRes.json()) as any;
+        if (data.status === 'OK' && data.results && data.results.length > 0) {
+          const formattedResults = data.results.map((r: any) => {
+            const comps = r.address_components || [];
+            let postcode = null;
+            let city = null;
+            for (const c of comps) {
+              if (c.types.includes('postal_code')) postcode = c.long_name;
+              if (c.types.includes('locality')) city = c.long_name;
+            }
+            return {
+              formatted_address: r.formatted_address,
+              latitude: r.geometry?.location?.lat,
+              longitude: r.geometry?.location?.lng,
+              postcode,
+              city
+            };
+          });
+
+          return res.json({
+            success: true,
+            results: formattedResults
+          });
+        }
+      }
+
+      return res.json({ success: true, results: [] });
+    } catch (err: any) {
+      console.error('Address search error:', err);
+      return res.status(500).json({ error: 'Failed to search address via Google Maps.' });
+    }
+  });
+
   // Get reports for user
   app.get('/api/reports', async (req, res) => {
     try {
@@ -138,7 +341,7 @@ async function startServer() {
   // Create new report
   app.post('/api/reports', async (req, res) => {
     try {
-      const { userId, clientName, phone, pincode, latitude, longitude, feedback } = req.body;
+      const { userId, clientName, phone, pincode, latitude, longitude, address, feedback } = req.body;
 
       if (!userId) {
         return res.status(400).json({ error: 'User ID is required.' });
@@ -163,6 +366,7 @@ async function startServer() {
         pincode,
         latitude: latitude !== undefined && latitude !== null && latitude !== '' ? Number(latitude) : null,
         longitude: longitude !== undefined && longitude !== null && longitude !== '' ? Number(longitude) : null,
+        address: address ? String(address).trim() : null,
         feedback
       });
 

@@ -34,6 +34,7 @@ export const ReportList: React.FC<ReportListProps> = ({
       r.clientName.toLowerCase().includes(term) ||
       r.phone.toLowerCase().includes(term) ||
       r.pincode.toLowerCase().includes(term) ||
+      (r.address && r.address.toLowerCase().includes(term)) ||
       r.feedback.toLowerCase().includes(term)
     );
   });
@@ -176,13 +177,24 @@ export const ReportList: React.FC<ReportListProps> = ({
                   </div>
                 </div>
 
+                {/* Actual Physical Address if saved */}
+                {report.address && (
+                  <div className="p-2 bg-indigo-50/50 border border-indigo-100/80 rounded-md flex items-start gap-1.5 text-[11px] text-slate-700">
+                    <MapPin className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                    <div className="leading-snug">
+                      <span className="font-semibold text-indigo-900 block text-[10px] uppercase tracking-wide">Actual Address:</span>
+                      <span className="text-slate-800">{report.address}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Bottom: Location GPS & Maps Button */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                   {hasCoordinates ? (
                     <div className="text-[10px] text-slate-600 font-mono flex items-center gap-1 truncate">
-                      <MapPin className="w-3 h-3 text-green-600 flex-shrink-0" />
+                      <Navigation className="w-3 h-3 text-green-600 flex-shrink-0" />
                       <span className="truncate">
-                        {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
+                        {report.latitude?.toFixed(5)}, {report.longitude?.toFixed(5)}
                       </span>
                     </div>
                   ) : (
@@ -199,8 +211,7 @@ export const ReportList: React.FC<ReportListProps> = ({
                         : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
                     }`}
                   >
-                    <Navigation className="w-3 h-3" />
-                    <span>Google Maps</span>
+                    <span>View Map</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </button>
                 </div>
@@ -211,13 +222,13 @@ export const ReportList: React.FC<ReportListProps> = ({
       </div>
 
       {/* Footer status indicator */}
-      <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-center gap-3 text-[10px] text-slate-500 uppercase font-bold tracking-tight">
-        <span className="flex items-center gap-1 text-green-700">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active Sync
+      <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between px-4 text-[10px] text-slate-500 font-medium">
+        <span className="flex items-center gap-1.5 text-slate-600">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+          <span>Synced with Database</span>
         </span>
-        <span>•</span>
-        <span className="flex items-center gap-1 text-indigo-600">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> MongoDB Portal
+        <span className="text-slate-400 font-semibold">
+          {filteredReports.length} {filteredReports.length === 1 ? 'record' : 'records'}
         </span>
       </div>
     </div>

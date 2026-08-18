@@ -16,6 +16,7 @@ export interface ClientReport {
   pincode: string;
   latitude: number | null;
   longitude: number | null;
+  address?: string | null;
   feedback: string;
   createdAt: string;
 }

@@ -27,13 +27,6 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
 
       {/* User Status & Logout */}
       <div className="flex items-center gap-2">
-        {dbStatus && (
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-stone-50 text-stone-600 rounded-full border border-stone-200 text-[10px] font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-            <span className="font-semibold text-stone-700">{dbStatus}</span>
-          </div>
-        )}
-
         {user ? (
           <button
             id="logout-btn"

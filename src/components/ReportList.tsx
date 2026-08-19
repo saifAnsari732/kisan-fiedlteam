@@ -179,10 +179,10 @@ export const ReportList: React.FC<ReportListProps> = ({
 
                 {/* Actual Physical Address if saved */}
                 {report.address && (
-                  <div className="p-2 bg-indigo-50/50 border border-indigo-100/80 rounded-md flex items-start gap-1.5 text-[11px] text-stone-700">
-                    <MapPin className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                  <div className="p-2 bg-rose-50/50 border border-rose-100/80 rounded-md flex items-start gap-1.5 text-[11px] text-stone-700">
+                    <MapPin className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
                     <div className="leading-snug">
-                      <span className="font-semibold text-indigo-900 block text-[10px] uppercase tracking-wide">Actual Address:</span>
+                      <span className="font-semibold text-rose-900 block text-[10px] uppercase tracking-wide">Actual Address:</span>
                       <span className="text-stone-800">{report.address}</span>
                     </div>
                   </div>

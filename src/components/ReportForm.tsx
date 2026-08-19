@@ -348,7 +348,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
             <button
               type="button"
               onClick={() => setShowSearch(!showSearch)}
-              className="text-[11px] text-indigo-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[11px] text-rose-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Search className="w-3 h-3" />
               <span>{showSearch ? 'Hide Search' : 'Search Landmark'}</span>
@@ -357,20 +357,20 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
 
           {/* Landmark Search Bar when toggled */}
           {showSearch && (
-            <div className="mb-2 p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-lg space-y-2">
+            <div className="mb-2 p-2.5 bg-rose-50/70 border border-rose-200 rounded-lg space-y-2">
               <div className="flex items-center gap-1.5">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Type shop, building, or area name..."
-                  className="flex-1 px-2.5 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="flex-1 px-2.5 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-800 focus:ring-2 focus:ring-rose-500 outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleSearchAddress}
                   disabled={searching}
-                  className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-rose-600 text-white rounded text-xs font-semibold hover:bg-rose-700 disabled:opacity-50 cursor-pointer flex items-center gap-1"
                 >
                   {searching ? <RotateCw className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
                   <span>Search</span>
@@ -385,9 +385,9 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                       key={idx}
                       type="button"
                       onClick={() => selectSearchResult(item)}
-                      className="w-full text-left p-1.5 hover:bg-indigo-50 rounded text-[11px] text-stone-700 flex items-start gap-1.5 cursor-pointer"
+                      className="w-full text-left p-1.5 hover:bg-rose-50 rounded text-[11px] text-stone-700 flex items-start gap-1.5 cursor-pointer"
                     >
-                      <MapPin className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                      <MapPin className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
                       <span className="leading-snug">{item.formatted_address}</span>
                     </button>
                   ))}
@@ -405,7 +405,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
             className={`w-full min-h-[44px] px-3 py-2 border-2 border-dashed rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               latitude !== null
                 ? 'bg-green-50/70 border-green-300 text-green-800 hover:bg-green-100/60'
-                : 'border-stone-200 text-stone-600 hover:border-blue-400 hover:text-rose-600 hover:bg-rose-50/30 active:bg-rose-50/60'
+                : 'border-stone-200 text-stone-600 hover:border-rose-400 hover:text-rose-600 hover:bg-rose-50/30 active:bg-rose-50/60'
             }`}
           >
             {locLoading ? (
@@ -440,7 +440,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                   href={`https://www.google.com/maps?q=${latitude},${longitude}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px] flex items-center gap-1"
+                  className="text-rose-600 hover:text-rose-800 font-semibold text-[11px] flex items-center gap-1"
                 >
                   <Navigation className="w-3 h-3" />
                   <span>Google Maps</span>
@@ -456,7 +456,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                     Actual Google Address:
                   </span>
                   {addressLoading ? (
-                    <span className="text-[10px] text-indigo-600 flex items-center gap-1">
+                    <span className="text-[10px] text-rose-600 flex items-center gap-1">
                       <RotateCw className="w-2.5 h-2.5 animate-spin" /> Verifying street address...
                     </span>
                   ) : (
@@ -473,7 +473,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ user, onReportCreated })
                     onChange={(e) => setAddress(e.target.value)}
                     rows={2}
                     placeholder="Enter or verify actual physical address..."
-                    className="w-full p-2 bg-white rounded border border-stone-200 text-stone-800 text-xs font-medium leading-relaxed shadow-2xs focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                    className="w-full p-2 bg-white rounded border border-stone-200 text-stone-800 text-xs font-medium leading-relaxed shadow-2xs focus:ring-2 focus:ring-rose-500 outline-none resize-none"
                   />
                   <div className="absolute right-2 bottom-2 text-stone-400 pointer-events-none">
                     <Edit3 className="w-3 h-3" />

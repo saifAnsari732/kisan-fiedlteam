@@ -196,10 +196,9 @@ export default function DashboardPage() {
         {/* Main Content Area */}
         {activeTab === 'new' ? (
           <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-            <div className="flex justify-between items-start mb-2">
+            <div className="flex justify-between items-start ">
               <div>
                 <h2 className="text-[17px] font-bold text-gray-800">New Client Report</h2>
-                <p className="text-[11px] text-gray-400 mt-0.5">Record field visit feedback & Google GPS location</p>
               </div>
               <div className="bg-indigo-50 p-2 rounded-lg">
                 <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>

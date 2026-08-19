@@ -12,6 +12,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('reports'); // 'reports' or 'agents'
 
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -56,6 +58,14 @@ export default function AdminPage() {
   const openMap = (lat, lng) => {
     window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
   };
+
+  const viewUserReports = (userId) => {
+    setSelectedUserId(userId);
+    setActiveTab('reports');
+  };
+
+  const filteredReports = selectedUserId ? reports.filter(r => (r.userId?._id || r.userId) === selectedUserId) : reports;
+  const activeUserName = selectedUserId ? usersList.find(u => u._id === selectedUserId)?.name : null;
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-semibold">Loading...</div>;
@@ -114,19 +124,26 @@ export default function AdminPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           
-          <div className="flex border-b border-gray-100 bg-gray-50/50">
-            <button 
-              onClick={() => setActiveTab('reports')}
-              className={`px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'reports' ? 'border-rose-500 text-rose-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-            >
-              Recent Submissions
-            </button>
-            <button 
-              onClick={() => setActiveTab('agents')}
-              className={`px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'agents' ? 'border-rose-500 text-rose-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-            >
-              Registered Agents & Details
-            </button>
+          <div className="flex border-b border-gray-100 bg-gray-50/50 justify-between items-center">
+            <div className="flex">
+              <button 
+                onClick={() => { setActiveTab('reports'); setSelectedUserId(null); }}
+                className={`px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'reports' ? 'border-rose-500 text-rose-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+              >
+                {selectedUserId ? `Reports by ${activeUserName}` : 'Recent Submissions'}
+              </button>
+              <button 
+                onClick={() => setActiveTab('agents')}
+                className={`px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'agents' ? 'border-rose-500 text-rose-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+              >
+                Registered Agents & Details
+              </button>
+            </div>
+            {selectedUserId && activeTab === 'reports' && (
+              <button onClick={() => setSelectedUserId(null)} className="mr-6 text-xs font-bold text-gray-500 hover:text-rose-500 bg-gray-100 px-3 py-1.5 rounded-lg transition">
+                Clear Filter x
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -142,7 +159,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {reports.map(report => (
+                  {filteredReports.map(report => (
                     <tr key={report._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                       <td className="p-4 font-semibold text-gray-800">
                         {report.userId?.name || 'Unknown'}
@@ -173,9 +190,9 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   ))}
-                  {reports.length === 0 && (
+                  {filteredReports.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="p-8 text-center text-gray-400 font-medium">No reports found</td>
+                      <td colSpan="5" className="p-8 text-center text-gray-400 font-medium">No reports found for this agent</td>
                     </tr>
                   )}
                 </tbody>
@@ -188,6 +205,7 @@ export default function AdminPage() {
                     <th className="p-4 border-b">Joined Date</th>
                     <th className="p-4 border-b text-center">Total Reports</th>
                     <th className="p-4 border-b text-center">GPS Usage</th>
+                    <th className="p-4 border-b text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -207,11 +225,16 @@ export default function AdminPage() {
                       <td className="p-4 text-center">
                         <span className="bg-green-50 text-green-700 font-bold px-3 py-1 rounded-lg text-sm">{u.gpsCount}</span>
                       </td>
+                      <td className="p-4 text-center">
+                        <button onClick={() => viewUserReports(u._id)} className="text-xs bg-[#4f46e5] hover:bg-indigo-600 text-white font-bold py-1.5 px-3 rounded-lg transition shadow-sm">
+                          View Reports
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {usersList.length === 0 && (
                     <tr>
-                      <td colSpan="4" className="p-8 text-center text-gray-400 font-medium">No agents registered</td>
+                      <td colSpan="5" className="p-8 text-center text-gray-400 font-medium">No agents registered</td>
                     </tr>
                   )}
                 </tbody>

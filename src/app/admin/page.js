@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -57,13 +58,16 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f1f5f9] font-sans pb-10">
       <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b border-gray-200">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">Admin Control Panel</h1>
-          <p className="text-xs text-gray-500">Monitoring All Agent Activities</p>
+        <div className="flex items-center gap-4">
+          <Image src="/5.png" alt="Logo" width={150} height={50} priority className="h-10 w-auto object-contain drop-shadow-sm" />
+          <div>
+            <h1 className="text-xl font-bold text-gray-800">Admin Control Panel</h1>
+            <p className="text-xs text-gray-500">Monitoring All Agent Activities</p>
+          </div>
         </div>
         <button 
           onClick={handleLogout}
-          className="text-sm font-semibold text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition"
+          className="text-sm font-semibold text-rose-500 hover:bg-rose-50 px-4 py-2 rounded-lg transition"
         >
           Logout
         </button>

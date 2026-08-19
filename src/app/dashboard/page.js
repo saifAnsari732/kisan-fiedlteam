@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -146,6 +147,11 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#f1f5f9] pb-24 font-sans">
       <div className="max-w-md mx-auto relative pt-4 px-4 space-y-4">
         
+        {/* Header / Logo */}
+        <div className="flex justify-center mb-2">
+          <Image src="/5.png" alt="Logo" width={200} height={60} priority className="h-10 w-auto object-contain drop-shadow-sm" />
+        </div>
+
         {/* Top Active Agent Card */}
         <div className="bg-white rounded-2xl shadow-sm p-4 flex justify-between items-center border border-gray-100">
           <div>
@@ -215,14 +221,14 @@ export default function DashboardPage() {
               
               {/* Client Name */}
               <div>
-                <label className="block text-[10px] font-bold text-[#64748b] tracking-wider mb-1.5 uppercase">Client Name <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-800 tracking-wide mb-1.5 uppercase">Client Name <span className="text-rose-500">*</span></label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
                   </div>
                   <input
                     type="text" required placeholder="e.g. Apex Enterprises"
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition placeholder:text-gray-300"
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-400 border-2 shadow-sm rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition placeholder:text-gray-300"
                     value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})}
                   />
                 </div>
@@ -231,27 +237,27 @@ export default function DashboardPage() {
               {/* Phone & Pincode */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#64748b] tracking-wider mb-1.5 uppercase">Phone <span className="text-rose-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-800 tracking-wide mb-1.5 uppercase">Phone <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.896-1.596-5.48-4.18-7.076-7.076l1.293-.97c.362-.271.527-.733.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                     </div>
                     <input
                       type="tel" required placeholder="+91 9876543210"
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition placeholder:text-gray-300"
+                      className="w-full pl-9 pr-3 py-2.5 border border-gray-400 border-2 shadow-sm rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition placeholder:text-gray-300"
                       value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-[#64748b] tracking-wider mb-1.5 uppercase">Pincode <span className="text-rose-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-800 tracking-wide mb-1.5 uppercase">Pincode <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5" /></svg>
                     </div>
                     <input
                       type="text" required placeholder="226012"
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition placeholder:text-gray-300"
+                      className="w-full pl-9 pr-3 py-2.5 border border-gray-400 border-2 shadow-sm rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition placeholder:text-gray-300"
                       value={formData.pincode} onChange={e => setFormData({...formData, pincode: e.target.value})}
                     />
                   </div>
@@ -261,7 +267,7 @@ export default function DashboardPage() {
               {/* Location */}
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="block text-[10px] font-bold text-[#64748b] tracking-wider uppercase">Google Maps Location & Address</label>
+                  <label className="block text-xs font-bold text-gray-800 tracking-wide uppercase">Google Maps Location & Address</label>
                   <button type="button" className="text-[10px] text-rose-600 flex items-center gap-1 font-semibold">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
                     Search Landmark
@@ -285,14 +291,14 @@ export default function DashboardPage() {
 
               {/* Feedback */}
               <div>
-                <label className="block text-[10px] font-bold text-[#64748b] tracking-wider mb-1.5 uppercase">Feedback / Response <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-800 tracking-wide mb-1.5 uppercase">Feedback / Response <span className="text-rose-500">*</span></label>
                 <div className="relative">
                   <div className="absolute top-3 left-3 pointer-events-none text-gray-400">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
                   </div>
                   <textarea
                     required rows="3" placeholder="Enter meeting notes, product interest, client feedback..."
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition resize-none placeholder:text-gray-300"
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-400 border-2 shadow-sm rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-sm text-gray-700 transition resize-none placeholder:text-gray-300"
                     value={formData.feedback} onChange={e => setFormData({...formData, feedback: e.target.value})}
                   ></textarea>
                 </div>

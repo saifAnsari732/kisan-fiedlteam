@@ -78,10 +78,18 @@ export default function DashboardPage() {
         let fetchedAddress = 'Location saved';
         
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-          const data = await res.json();
-          if (data && data.display_name) {
-            fetchedAddress = data.display_name;
+          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+          if (apiKey) {
+            const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`);
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+              fetchedAddress = data.results[0].formatted_address;
+            } else {
+              fetchedAddress = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            }
+          } else {
+            // Fallback to basic string if no API key
+            fetchedAddress = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
           }
         } catch (err) {
           console.error("Failed to fetch address", err);
@@ -147,10 +155,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#f1f5f9] pb-24 font-sans">
       <div className="max-w-md mx-auto relative pt-4 px-4 space-y-4">
         
-        {/* Header / Logo */}
-        <div className="flex justify-center mb-2">
-          <Image src="/5.png" alt="Logo" width={200} height={60} priority className="h-10 w-auto object-contain drop-shadow-sm" />
-        </div>
+      
 
         {/* Top Active Agent Card */}
         <div className="bg-white rounded-2xl shadow-sm p-4 flex justify-between items-center border border-gray-100">
@@ -166,15 +171,7 @@ export default function DashboardPage() {
               </p>
               <p className="font-bold text-gray-800 text-sm mt-0.5">{reports.length}</p>
             </div>
-            <div className="border border-green-100 bg-green-50/30 rounded-lg px-3 py-1.5 text-center min-w-[60px]">
-              <p className="text-[10px] font-bold text-green-500 uppercase flex items-center justify-center gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
-                GPS
-              </p>
-              <p className="font-bold text-gray-800 text-sm mt-0.5">
-                {reports.filter(r => r.latitude).length}
-              </p>
-            </div>
+            
           </div>
         </div>
 
@@ -283,9 +280,15 @@ export default function DashboardPage() {
                   {isLocating ? 'Acquiring GPS...' : 'Get Current Location (Google Maps)'}
                 </button>
                 {formData.address && (
-                  <p className="text-[11px] text-[#059669] mt-2 font-medium bg-[#ecfdf5] p-2 rounded-lg border border-[#a7f3d0]">
-                    ✓ {formData.address}
-                  </p>
+                  <div className="mt-3 relative">
+                    <label className="block text-[10px] font-bold text-gray-800 tracking-wide mb-1 uppercase">Fetched Address (You can edit this if inaccurate)</label>
+                    <textarea
+                      rows="2"
+                      className="w-full px-3 py-2 bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-xs text-[#059669] font-medium transition resize-none"
+                      value={formData.address}
+                      onChange={e => setFormData({...formData, address: e.target.value})}
+                    ></textarea>
+                  </div>
                 )}
               </div>
 
